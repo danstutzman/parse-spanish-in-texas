@@ -36,3 +36,28 @@ fi
 curl http://corpus.spanishintexas.org/corpus/vtt/AM001_1925_EP_SU2011_AD.vtt > AM001_1925_EP_SU2011_AD.vtt
 
 sudo apt-get install -y ruby
+ruby extract_text.rb > extracted.txt
+
+curl http://nlp.stanford.edu/software/stanford-spanish-corenlp-2015-10-14-models.jar > stanford-spanish-corenlp-2015-10-14-models.jar
+
+tee es.properties <<EOF2
+annotators = tokenize, ssplit, pos, parse, lemma
+tokenize.language = es
+#pos.model=stanford-postagger-full-2015-04-20/models/spanish-distsim.tagger
+pos.model=edu/stanford/nlp/models/pos-tagger/spanish/spanish-distsim.tagger
+#parse.model = edu/stanford/nlp/models/lexparser/spanishPCFG.ser.gz
+parse.model = edu/stanford/nlp/models/srparser/spanishSR.ser.gz
+EOF2
+
+CP=.
+CP=$CP:CoreNLP/build/libs/CoreNLP-3.4.1.jar
+CP=$CP:CoreNLP/lib/slf4j-simple.jar
+CP=$CP:CoreNLP/lib/slf4j-api.jar
+CP=$CP:stanford-spanish-corenlp-2015-10-14-models.jar
+java -cp $CP -Xmx2g edu.stanford.nlp.pipeline.StanfordCoreNLP \
+  -props es.properties \
+  -file input.txt
+EOF
+
+gcloud compute copy-files parser:input.txt input.txt
+gcloud compute copy-files parser:input.txt.out input.txt.out
