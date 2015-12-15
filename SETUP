@@ -1,0 +1,38 @@
+Run once per project:
+gcloud compute firewall-rules create mosh --allow udp:60001-60010
+
+Run once per workstation:
+gcloud config set compute/zone us-central1-b
+gcloud config set project speech-danstutzman
+---------------------
+
+gcloud compute instances create parser \
+  --image ubuntu-15-10 \
+  --machine-type n1-standard-1 \
+  --preemptible
+
+#gcloud compute ssh parser 'sudo shutdown +2400 -P'
+
+gcloud compute ssh parser 'sudo apt-get install -y mosh'
+
+gcloud compute ssh parser <<EOF
+set -ex
+
+sudo apt-get install -y python-software-properties debconf-utils
+sudo add-apt-repository ppa:webupd8team/java
+sudo apt-get update
+echo "oracle-java8-installer shared/accepted-oracle-license-v1-1 select true" | sudo debconf-set-selections
+sudo apt-get install -y oracle-jdk7-installer
+
+if [ ! -e CoreNLP ]; then
+  git clone https://github.com/stanfordnlp/CoreNLP.git
+  cd CoreNLP
+  sudo apt-get install -y gradle
+  sudo apt-get install -y oracle-java8-set-default
+  gradle jar
+  cd
+fi
+
+curl http://corpus.spanishintexas.org/corpus/vtt/AM001_1925_EP_SU2011_AD.vtt > AM001_1925_EP_SU2011_AD.vtt
+
+sudo apt-get install -y ruby
